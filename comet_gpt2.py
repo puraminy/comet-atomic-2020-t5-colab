@@ -58,7 +58,7 @@ def main():
     config.IN_LEN = int(os.environ.get("IN_LEN", 16))
     config.OUT_LEN = int(os.environ.get("OUT_LEN", 34))
     config.SUMMARY_LEN = 0 # Used for t5
-    config.OUT_DIR = os.environ.get("OUT_DIR", "/models")
+    config.OUT_DIR = os.environ.get("OUT_DIR", "/content/comet-atomic-2020/models")
     config.DO_TRAIN = os.environ.get("DO_TRAIN", "False") == "True"
     config.DO_PRED = os.environ.get("DO_PRED", "True") == "True"
     config.PRED_FILE = str(os.environ.get("PRED_FILE", ""))
@@ -70,7 +70,7 @@ def main():
     np.random.seed(config.SEED)  # numpy random seed
     torch.backends.cudnn.deterministic = True
 
-    model_name = "gpt2" if 'GPT2_MODEL' not in os.environ else os.environ['GPT2_MODEL']
+    model_name = "gpt2-xl" if 'GPT2_MODEL' not in os.environ else os.environ['GPT2_MODEL']
 
     try:
         tokenizer = GPT2Tokenizer.from_pretrained(model_name)
@@ -138,7 +138,7 @@ def main():
 
     train_dataset = pd.read_csv(
         os.environ.get('TRAIN_DATA_PATH', "/tmp/gpt2data/atomic_train.tsv"),
-        encoding='latin-1', sep="\t",header=None,names=['head_event', 'tail_event', 'relation'])
+        encoding='latin-1', sep="\t",header=None,names=['head_event','relation','tail_event'])
     if DEBUG:
         train_dataset = train_dataset.head(NUM_INST)
     #train_dataset = train_dataset[['head_event', 'tail_event', 'relation']]
@@ -147,7 +147,7 @@ def main():
     logger.info(train_dataset.head())
     logger.info(train_dataset.tail_event)
 
-    val_dataset = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\t",header=None,names=['head_event', 'tail_event', 'relation'])
+    val_dataset = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\t",header=None,names=['head_event','relation','tail_event'])
     if DEBUG:
         val_dataset = val_dataset.head(NUM_INST)
     val_dataset = val_dataset[['head_event', 'tail_event', 'relation']]
@@ -156,7 +156,7 @@ def main():
     logger.info(val_dataset.tail_event)
     logger.info(val_dataset.head())
 
-    test_dataset = pd.read_csv(os.environ.get('TEST_DATA_PATH', "/tmp/gpt2data/atomic_test.tsv"), encoding='latin-1', sep="\t",header=None,names=['head_event', 'tail_event', 'relation'])
+    test_dataset = pd.read_csv(os.environ.get('TEST_DATA_PATH', "/tmp/gpt2data/atomic_test.tsv"), encoding='latin-1', sep="\t",header=None,names=['head_event','relation','tail_event'])
     if DEBUG:
         test_dataset = test_dataset.head(NUM_INST)
     test_dataset = test_dataset[['head_event', 'tail_event', 'relation']]
@@ -166,7 +166,7 @@ def main():
     logger.info(test_dataset.tail_event)
     logger.info(test_dataset.head())
 
-    val_dataset_mini = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\t",header=None,names=['head_event', 'tail_event', 'relation'])
+    val_dataset_mini = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\t",header=None,names=['head_event','relation','tail_event'])
     if DEBUG:
         val_dataset_mini = val_dataset_mini.head(5)
     val_dataset_mini = val_dataset_mini.sample(n=min(int(val_dataset_mini.size / 3), 100),
@@ -181,10 +181,10 @@ def main():
     logger.info("DEV Dataset tuple_count: {}".format(val_dataset.shape))
     logger.info("DEV MINI Dataset tuple_count: {}".format(val_dataset_mini.shape))
 
-    training_set = KGDataset(train_dataset, tokenizer, config.OUT_LEN, config.SUMMARY_LEN, model="gpt2")
-    val_set = KGDataset(val_dataset, tokenizer, config.IN_LEN, config.OUT_LEN - config.IN_LEN, model="gpt2", is_eval=True)
-    val_set_mini = KGDataset(val_dataset.head(2000), tokenizer, config.IN_LEN,  config.OUT_LEN - config.IN_LEN, model="gpt2", is_eval=True)
-    test_set = KGDataset(test_dataset, tokenizer, config.IN_LEN,  config.OUT_LEN - config.IN_LEN, model="gpt2", is_eval=True)
+    training_set = KGDataset(train_dataset, tokenizer, config.OUT_LEN, config.SUMMARY_LEN, model="gpt2-xl")
+    val_set = KGDataset(val_dataset, tokenizer, config.IN_LEN, config.OUT_LEN - config.IN_LEN, model="gpt2-xl", is_eval=True)
+    val_set_mini = KGDataset(val_dataset.head(2000), tokenizer, config.IN_LEN,  config.OUT_LEN - config.IN_LEN, model="gpt2-xl", is_eval=True)
+    test_set = KGDataset(test_dataset, tokenizer, config.IN_LEN,  config.OUT_LEN - config.IN_LEN, model="gpt2-xl", is_eval=True)
 
     train_params = {
         'batch_size': config.TRAIN_BATCH_SIZE,
@@ -220,7 +220,7 @@ def main():
             train(epoch, tokenizer, model, device, training_loader, optimizer, val_loader_mini, model_class="gpt2")
             model.save_pretrained('{}/checkpoint_{}'.format(config.OUT_DIR, epoch))
             tokenizer.save_pretrained('{}/checkpoint_{}'.format(config.OUT_DIR, epoch))
-        model.save_pretrained('/models')
+        model.save_pretrained(config.OUT_DIR)
 
     if config.DO_PRED:
 
@@ -242,7 +242,7 @@ def main():
         logger.info(pred_dataset.tail_event)
         logger.info(pred_dataset.head())
 
-        pred_set = KGDataset(pred_dataset, tokenizer, config.IN_LEN, config.OUT_LEN - config.IN_LEN, model="gpt2", is_eval=True)
+        pred_set = KGDataset(pred_dataset, tokenizer, config.IN_LEN, config.OUT_LEN - config.IN_LEN, model="gpt2-xl", is_eval=True)
         pred_loader = DataLoader(pred_set, **val_params, drop_last=False)
 
         pred_generations = beam_generations(tokenizer, model, device, pred_loader, top_k=config.TOP_K)
@@ -250,8 +250,8 @@ def main():
                     [json.dumps(r) for r in pred_generations])
 
         # Resave the model to keep generations and model associated
-        model.save_pretrained('/models')
-        tokenizer.save_pretrained('/models')
+        model.save_pretrained(config.OUT_DIR)
+        tokenizer.save_pretrained(config.OUT_DIR)
 
 if __name__ == '__main__':
     parser = OptionParser()
