@@ -138,41 +138,41 @@ def main():
 
     train_dataset = pd.read_csv(
         os.environ.get('TRAIN_DATA_PATH', "/tmp/gpt2data/atomic_train.tsv"),
-        encoding='latin-1', sep="\s")
+        encoding='latin-1', sep="\t")
     if DEBUG:
         train_dataset = train_dataset.head(NUM_INST)
     # train_dataset = train_dataset[['head_event', 'tail_event', 'relation']]
-    train_dataset.head_event = train_dataset.head_event + ' ' + train_dataset.relation + " [GEN]"
+    train_dataset.head_event = train_dataset.head_event + ' ' + train_dataset.relation + ' [GEN]'
     train_dataset.tail_event = train_dataset.tail_event + ' [EOS]'
     logger.info(train_dataset.head())
     logger.info(train_dataset.tail_event)
 
-    val_dataset = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\s")
+    val_dataset = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\t")
     if DEBUG:
         val_dataset = val_dataset.head(NUM_INST)
     val_dataset = val_dataset[['head_event', 'tail_event', 'relation']]
-    val_dataset.head_event = val_dataset.head_event + ' ' + val_dataset.relation + " [GEN]"
+    val_dataset.head_event = val_dataset.head_event + ' ' + val_dataset.relation + ' [GEN]'
     val_dataset.tail_event = val_dataset.tail_event + ' [EOS]'
     logger.info(val_dataset.tail_event)
     logger.info(val_dataset.head())
 
-    test_dataset = pd.read_csv(os.environ.get('TEST_DATA_PATH', "/tmp/gpt2data/atomic_test.tsv"), encoding='latin-1', sep="\s")
+    test_dataset = pd.read_csv(os.environ.get('TEST_DATA_PATH', "/tmp/gpt2data/atomic_test.tsv"), encoding='latin-1', sep="\t")
     if DEBUG:
         test_dataset = test_dataset.head(NUM_INST)
     test_dataset = test_dataset[['head_event', 'tail_event', 'relation']]
     test_dataset.head_event = test_dataset.head_event + ' ' + test_dataset.relation \
-                              + " [GEN]"
+                              + ' [GEN]'
     test_dataset.tail_event = test_dataset.tail_event + ' [EOS]'
     logger.info(test_dataset.tail_event)
     logger.info(test_dataset.head())
 
-    val_dataset_mini = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\s")
+    val_dataset_mini = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\t")
     if DEBUG:
         val_dataset_mini = val_dataset_mini.head(5)
     val_dataset_mini = val_dataset_mini.sample(n=min(int(val_dataset_mini.size / 3), 100),
                                                random_state=config.SEED)
     val_dataset_mini = val_dataset_mini[['head_event', 'tail_event', 'relation']]
-    val_dataset_mini.head_event = val_dataset_mini.head_event + ' ' + val_dataset_mini.relation + " [GEN]"
+    val_dataset_mini.head_event = val_dataset_mini.head_event + ' ' + val_dataset_mini.relation + ' [GEN]'
     val_dataset_mini.tail_event = val_dataset_mini.tail_event + ' [EOS]'
     logger.info(val_dataset_mini.tail_event)
     logger.info(val_dataset_mini.head())
@@ -230,14 +230,14 @@ def main():
             pred_dataset = pred_dataset.rename(columns={"head": "head_event", "tails": "tail_event"})
             pred_dataset = pred_dataset.explode('tail_event')
         else:
-            pred_dataset = pd.read_csv(config.PRED_FILE, encoding='latin-1', sep="\s")
+            pred_dataset = pd.read_csv(config.PRED_FILE, encoding='latin-1', sep="\t")
 
         if DEBUG:
             pred_dataset = pred_dataset.head(NUM_INST)
 
         pred_dataset = pred_dataset.drop_duplicates(['head_event', 'relation'], ignore_index=True)
 
-        pred_dataset.head_event = pred_dataset.head_event + ' ' + pred_dataset.relation + " [GEN]"
+        pred_dataset.head_event = pred_dataset.head_event + ' ' + pred_dataset.relation + ' [GEN]'
         pred_dataset.tail_event = pred_dataset.tail_event + ' [EOS]'
         logger.info(pred_dataset.tail_event)
         logger.info(pred_dataset.head())
