@@ -49,7 +49,7 @@ def train(epoch, tokenizer, model, device, loader, optimizer, val_loader=None, m
         if iteration % 500 == 0:
             logger.info(f'\nEpoch: {epoch}, Loss:  {loss.item()}, BatchesLeft: {batches_left}')
 
-        if iteration % 5000 == 0:
+        if iteration % 500 == 0:
             model.save_pretrained(save_dir + "/iter_{}_model".format(iteration))
             tokenizer.save_pretrained(save_dir + "/iter_{}_tokenizer".format(iteration))
 
@@ -57,7 +57,7 @@ def train(epoch, tokenizer, model, device, loader, optimizer, val_loader=None, m
         loss.backward()
         optimizer.step()
 
-        if iteration % 100 == 0 and val_loader != None:
+        if iteration % 150 == 0 and iteration != 0 and val_loader != None:
             log_eval(epoch, tokenizer, model, device, val_loader, model_class=model_class)
             model.train()
 
