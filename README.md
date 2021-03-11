@@ -2,6 +2,9 @@
 
 ![Example for ATOMIC2020](header.png "Example of ATOMIC2020, a new commonsense knowledge graph covering social, physical, and eventive aspects of everyday inferential knowledge.")
 
+## Version Note:
+This fork intends to make the GPT-2 training module easier to use in Google Colab. This is not intended as a general improvement to the original repository, and will in fact have fewer features. See the original repository and paper for the full version.
+
 ## Paper
 Jena D. Hwang, Chandra Bhagavatula, Ronan Le Bras, Jeff Da, Keisuke Sakaguchi, Antoine Bosselut, Yejin Choi\
 ["(Comet-) Atomic 2020: On Symbolic and Neural Commonsense Knowledge Graphs."](https://arxiv.org/abs/2010.05953) \
