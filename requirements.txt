@@ -15,3 +15,5 @@ pytest
 conllu
 spacy
 inflect
+transformers
+wandb
