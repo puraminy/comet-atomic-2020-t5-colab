@@ -51,7 +51,7 @@ def main():
     config = wandb.config
     config.TRAIN_BATCH_SIZE = int(os.environ.get("TRAIN_BATCH_SIZE", 2))
     config.VALID_BATCH_SIZE = int(os.environ.get("VALID_BATCH_SIZE", 2))
-    config.TRAIN_EPOCHS = int(os.environ.get("TRAIN_EPOCHS", 3))
+    config.TRAIN_EPOCHS = int(os.environ.get("TRAIN_EPOCHS", 1))
     config.VAL_EPOCHS = int(os.environ.get("VAL_EPOCHS", 1))
     config.LEARNING_RATE = float(os.environ.get("LEARNING_RATE", "1e-5"))
     config.SEED = int(os.environ.get("SEED", 42))
@@ -141,7 +141,7 @@ def main():
         encoding='latin-1', sep="\t",header=None,names=['head_event','relation','tail_event'])
     if DEBUG:
         train_dataset = train_dataset.head(NUM_INST)
-    #train_dataset = train_dataset[['head_event', 'tail_event', 'relation']]
+    #train_dataset = train_dataset[['head_event','relation','tail_event']]
     train_dataset.head_event = train_dataset.head_event + ' ' + train_dataset.relation + ' [GEN]'
     train_dataset.tail_event = train_dataset.tail_event + ' [EOS]'
     logger.info(train_dataset.head())
@@ -150,7 +150,7 @@ def main():
     val_dataset = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\t",header=None,names=['head_event','relation','tail_event'])
     if DEBUG:
         val_dataset = val_dataset.head(NUM_INST)
-    val_dataset = val_dataset[['head_event', 'tail_event', 'relation']]
+    val_dataset = val_dataset[['head_event','relation','tail_event']]
     val_dataset.head_event = val_dataset.head_event + ' ' + val_dataset.relation + ' [GEN]'
     val_dataset.tail_event = val_dataset.tail_event + ' [EOS]'
     logger.info(val_dataset.tail_event)
@@ -159,7 +159,7 @@ def main():
     test_dataset = pd.read_csv(os.environ.get('TEST_DATA_PATH', "/tmp/gpt2data/atomic_test.tsv"), encoding='latin-1', sep="\t",header=None,names=['head_event','relation','tail_event'])
     if DEBUG:
         test_dataset = test_dataset.head(NUM_INST)
-    test_dataset = test_dataset[['head_event', 'tail_event', 'relation']]
+    test_dataset = test_dataset[['head_event','relation','tail_event']]
     test_dataset.head_event = test_dataset.head_event + ' ' + test_dataset.relation \
                               + ' [GEN]'
     test_dataset.tail_event = test_dataset.tail_event + ' [EOS]'
@@ -171,7 +171,7 @@ def main():
         val_dataset_mini = val_dataset_mini.head(5)
     val_dataset_mini = val_dataset_mini.sample(n=min(int(val_dataset_mini.size / 3), 100),
                                                random_state=config.SEED)
-    val_dataset_mini = val_dataset_mini[['head_event', 'tail_event', 'relation']]
+    val_dataset_mini = val_dataset_mini[['head_event','relation','tail_event']]
     val_dataset_mini.head_event = val_dataset_mini.head_event + ' ' + val_dataset_mini.relation + ' [GEN]'
     val_dataset_mini.tail_event = val_dataset_mini.tail_event + ' [EOS]'
     logger.info(val_dataset_mini.tail_event)
@@ -217,7 +217,7 @@ def main():
         logger.info('Initiating Fine-Tuning for the model on our dataset')
 
         for epoch in range(config.TRAIN_EPOCHS):
-            train(epoch, tokenizer, model, device, training_loader, optimizer, val_loader_mini, model_class="gpt2")
+            train(epoch, tokenizer, model, device, training_loader, optimizer, val_loader_mini, model_class="gpt2",save_dir="/content/comet-atomic-2020/models")
             model.save_pretrained('{}/checkpoint_{}'.format(config.OUT_DIR, epoch))
             tokenizer.save_pretrained('{}/checkpoint_{}'.format(config.OUT_DIR, epoch))
         model.save_pretrained(config.OUT_DIR)
