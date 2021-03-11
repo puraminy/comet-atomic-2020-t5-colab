@@ -138,16 +138,16 @@ def main():
 
     train_dataset = pd.read_csv(
         os.environ.get('TRAIN_DATA_PATH', "/tmp/gpt2data/atomic_train.tsv"),
-        encoding='latin-1', sep="\t")
+        encoding='latin-1', sep="\t",header=None,names=['head_event', 'tail_event', 'relation'])
     if DEBUG:
         train_dataset = train_dataset.head(NUM_INST)
-    # train_dataset = train_dataset[['head_event', 'tail_event', 'relation']]
+    #train_dataset = train_dataset[['head_event', 'tail_event', 'relation']]
     train_dataset.head_event = train_dataset.head_event + ' ' + train_dataset.relation + ' [GEN]'
     train_dataset.tail_event = train_dataset.tail_event + ' [EOS]'
     logger.info(train_dataset.head())
     logger.info(train_dataset.tail_event)
 
-    val_dataset = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\t")
+    val_dataset = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\t",header=None,names=['head_event', 'tail_event', 'relation'])
     if DEBUG:
         val_dataset = val_dataset.head(NUM_INST)
     val_dataset = val_dataset[['head_event', 'tail_event', 'relation']]
@@ -156,7 +156,7 @@ def main():
     logger.info(val_dataset.tail_event)
     logger.info(val_dataset.head())
 
-    test_dataset = pd.read_csv(os.environ.get('TEST_DATA_PATH', "/tmp/gpt2data/atomic_test.tsv"), encoding='latin-1', sep="\t")
+    test_dataset = pd.read_csv(os.environ.get('TEST_DATA_PATH', "/tmp/gpt2data/atomic_test.tsv"), encoding='latin-1', sep="\t",header=None,names=['head_event', 'tail_event', 'relation'])
     if DEBUG:
         test_dataset = test_dataset.head(NUM_INST)
     test_dataset = test_dataset[['head_event', 'tail_event', 'relation']]
@@ -166,7 +166,7 @@ def main():
     logger.info(test_dataset.tail_event)
     logger.info(test_dataset.head())
 
-    val_dataset_mini = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\t")
+    val_dataset_mini = pd.read_csv(os.environ.get('DEV_DATA_PATH', "/tmp/gpt2data/atomic_dev.tsv"), encoding='latin-1', sep="\t",header=None,names=['head_event', 'tail_event', 'relation'])
     if DEBUG:
         val_dataset_mini = val_dataset_mini.head(5)
     val_dataset_mini = val_dataset_mini.sample(n=min(int(val_dataset_mini.size / 3), 100),
@@ -204,7 +204,7 @@ def main():
     val_loader_mini = DataLoader(val_set_mini, **val_params, drop_last=True)
     
     logging.info("Loading model from {}".format(model_name))
-    model = GPT2LMHeadModel.from_pretrained(model_name, use_cdn=False)
+    model = GPT2LMHeadModel.from_pretrained(model_name)
     logging.info("Move model to device {}".format(device))
     model = model.to(device)
     model.resize_token_embeddings(len(tokenizer))
