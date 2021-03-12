@@ -4,6 +4,8 @@
 
 ## Version Note:
 This fork intends to make the GPT-2 training module easier to use in Google Colab. This is not intended as a general improvement to the original repository, and will in fact have fewer features. See the original repository and paper for the full version.
+It is tested and working with GPT-2 XL at this Colab notebook:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1PgJqI3fjkfnQRCWh4Hzm1w_rU7ucFVaq?usp=sharing)
 
 ## Paper
 Jena D. Hwang, Chandra Bhagavatula, Ronan Le Bras, Jeff Da, Keisuke Sakaguchi, Antoine Bosselut, Yejin Choi\
