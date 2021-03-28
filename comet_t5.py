@@ -140,12 +140,12 @@ tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 DEBUT = True
 train_dataset = pd.read_csv(
 os.environ.get('TRAIN_DATA_PATH', "/tmp/atomic/atomic_train.tsv"),
-encoding='latin-1', sep="\t") #,header=None,names=['head_event','relation','tail_event'])
+encoding='latin-1', sep="\t",header=None,names=['head_event','relation','tail_event'])
 if DEBUG:
     train_dataset = train_dataset.head(NUM_INST)
     
 
-train_dataset
+#train_dataset
 
 #train_dataset = train_dataset[['head_event','relation','tail_event']]
 train_dataset.head_event = train_dataset.head_event + ' ' + train_dataset.relation + ' [GEN]'
