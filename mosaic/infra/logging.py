@@ -32,7 +32,7 @@ def log_eval(epoch, tokenizer, model, device, loader, sample_limit=5000, model_c
             ids = data['source_ids'].to(device, dtype = torch.long)
             mask = data['source_mask'].to(device, dtype = torch.long)
             if model_class == "t5":
-                outputs = model(input_ids = ids, attention_mask = mask, decoder_input_ids=y_ids, lm_labels=lm_labels)
+                outputs = model(input_ids = ids, attention_mask = mask, decoder_input_ids=y_ids, labels=lm_labels)
             else:
                 outputs = model(input_ids = ids, attention_mask = mask, labels=ids)
 
