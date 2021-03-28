@@ -34,22 +34,22 @@ def train(epoch, tokenizer, model, device, loader, optimizer, val_loader=None, m
 
         if model_class == "t5":
             outputs = model(input_ids=ids, attention_mask=mask, decoder_input_ids=y_ids,
-                            lm_labels=lm_labels)
+                            labels=lm_labels)
         else:
             outputs = model(input_ids=ids, attention_mask=mask, labels=ids)
         loss = outputs[0]
 
-        if iteration % 100 == 0:
+        if iteration % 1000 == 0:
             wandb.log({"Training Loss": loss.item(), "Epoch": epoch,
                        "Batches left": batch_count - iteration})
             batches_left = batch_count - iteration
             logger.info(
                 f'\nEpoch: {epoch}, Iteration: {iteration}, Loss:  {loss.item()}, Batches left: {batches_left}')
 
-        if iteration % 500 == 0:
+        if iteration % 10000 == 0:
             logger.info(f'\nEpoch: {epoch}, Loss:  {loss.item()}, BatchesLeft: {batches_left}')
 
-        if iteration % 500 == 0:
+        if iteration % 10000 == 0:
             model.save_pretrained(save_dir + "/iter_{}_model".format(iteration))
             tokenizer.save_pretrained(save_dir + "/iter_{}_tokenizer".format(iteration))
 
@@ -77,7 +77,7 @@ def validate(epoch, tokenizer, model, device, loader):
                 input_ids=ids,
                 attention_mask=mask,
                 do_sample=True,
-                max_length=int(os.environ['OUT_LEN']),
+                max_length=46, #int(os.environ['OUT_LEN']),
                 num_beams=5,
                 top_k=50,
                 top_p=0.95
@@ -120,7 +120,7 @@ def beam_generations(tokenizer, model, device, loader, top_k=40):
                 attention_mask=mask,
                 temperature=1.0,
                 do_sample=False,
-                max_length=int(os.environ['OUT_LEN']),
+                max_length=46, #int(os.environ['OUT_LEN']),
                 top_p=0.9,
                 top_k=top_k,
                 repetition_penalty=1.0,
