@@ -50,31 +50,16 @@ def topk_eval(model_name, data, data_type, k):
 
     for i, l in enumerate(data):
         (gens, tails, head) = get_refs_preds(l, type=data_type)
-        #print("Gens:", gens)
-        #print("Tails:", tails)
-        #print("Head:", head)
 
         sentence_tails = [t.lower() for t in tails]
-        print("sentence_tails:", sentence_tails)
         split_tails = [t.lower().split() for t in tails]
 
         for (j, g) in enumerate(gens[:k]):
             key = str(i) + "_" + str(j)
             topk_gts[key] = sentence_tails
             topk_res[key] = [g.lower()]
-            #print("g.lower", g.lower().split())
-            #print("split_tails", split_tails)
 
-            b = sentence_bleu(sentence_tails, 
-                              g.lower(), 
-                              weights=(0.5, 0.5))
-            #print("b1:",b)
-
-            b = sentence_bleu(split_tails, 
-                              g.lower().split(), 
-                              weights=(0.5, 0.5))
-            #print("b2:",b)
-            
+            b = sentence_bleu(split_tails, g.lower().split(), weights=(0.5, 0.5))
             topk_bleu_score.append((l, b))
             if g in sentence_tails:
                 topk_exact_match.append((l, 1))
@@ -90,11 +75,11 @@ def topk_eval(model_name, data, data_type, k):
                 topk_is_head.append((l, 0))
 
     print("---------------TOP K={}---------------".format(k))
-    print(np.mean(get2(topk_exact_match)))
-    print(np.mean(get2(topk_exact_match_not_none)))
-    print(np.mean(get2(topk_bleu_score)))
+    #print(np.mean(get2(topk_exact_match)))
+    #print(np.mean(get2(topk_exact_match_not_none)))
+    #print(np.mean(get2(topk_bleu_score)))
     QGEval = QGEvalCap(model_name, topk_gts, topk_res)
-    scores,_ = QGEval.evaluate()
+    scores = QGEval.evaluate()
     scores["Exact_match"] = np.mean(get2(topk_exact_match))
     #scores["TailIsHead"] = np.mean(get2(topk_is_head))
     print(scores)
@@ -111,13 +96,23 @@ def toRow(name, results, columns):
     return [name] + [format(float(results[c]), '#.3f') for c in columns]
 
 # +
+
+    # Eval
+expts = [
+    ['./data/BART/BART-atomic_2020.json', "BART-ATOMIC2020", 2],
+    ['./data/BART/BART-conceptnet.json', "BART-ConceptNet", 2],
+    ['./data/BART/BART-transomcs.json', "BART-TransOMCS", 2],
+    ['./data/GPT2/atomic-zeroshot-generations.jsonl', "GPT2-0shot-ATOMIC", 1],
+    ['./data/GPT2/atomic2020-zeroshot-generations.jsonl', "GPT2-0shot-ATOMIC2020", 1],
+    ['./data/T5/atomic2020-generations.jsonl', "T5-L-ATOMIC2020", 3],
+]
+
 expts = [['/home/pouramini/atomic_models/mygpt/pred_generations.jsonl',
            'MYGPT', 4]]
 
 add_column = True
 print(expts)
 for (f, m, t) in expts:
-    print(f)
     s = eval(f, data_type=t, model_name=m)
     columns = list(s.keys())
     s_row = toRow(m, s, columns)
@@ -127,17 +122,6 @@ for (f, m, t) in expts:
     rows.append(s_row)
 
 print(tabulate(rows, headers='firstrow', tablefmt='latex', floatfmt='#.3f'))
-# +
-import sacrebleu
-sys = ["This is cat."] 
-refs = [["This is a cat."], 
-        ["This is a bad cat."]] 
-
-bleu = sacrebleu.corpus_bleu(sys, refs)
-print("bleu", bleu.score)
-print("bleu", round(bleu.score,2))
-
 # -
-
 
 
