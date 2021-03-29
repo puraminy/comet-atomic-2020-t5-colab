@@ -1,6 +1,6 @@
 # +
 import sys
-sys.path.append("/home/pouramini/comet-atomic-2020/")
+sys.path.append("/home/ahmad/comet-atomic-2020/")
 
 import argparse
 import numpy as np
@@ -28,7 +28,7 @@ def get_refs_preds(l, type=1):
         head = l["fact"]["head"]
         gens = l["generations"]
     if type==4:
-        tails = l["target"]
+        tails = [l["target"]]
         head = l["source"]
         gens = l["generations"]
 
@@ -37,6 +37,9 @@ def get_refs_preds(l, type=1):
 def get2(l):
     return list(zip(*l))[1]
 
+
+# +
+import sacrebleu
 
 def topk_eval(model_name, data, data_type, k):
 
@@ -53,30 +56,46 @@ def topk_eval(model_name, data, data_type, k):
         #print("Gens:", gens)
         #print("Tails:", tails)
         #print("Head:", head)
+        new_tails = []
+        for t in tails:
+            end_index = t.index("[EOS]")
+            t = t[:end_index]
+            new_tails.append(t)
+        tails = new_tails
 
-        sentence_tails = [t.lower() for t in tails]
+        sentence_tails = [t.lower().strip() for t in tails]
         print("sentence_tails:", sentence_tails)
         split_tails = [t.lower().split() for t in tails]
 
         for (j, g) in enumerate(gens[:k]):
+            #print("g:",g)
+            start_index = g.index("[GEN]")
+            end_index = g.index("[EOS]")
+            if start_index > 0 and end_index > 0:
+                g = g[start_index+5:end_index].strip()
+            elif end_index > 0:
+                g = g[:end_index].strip()
+            #print("g2:",g)
             key = str(i) + "_" + str(j)
             topk_gts[key] = sentence_tails
             topk_res[key] = [g.lower()]
-            #print("g.lower", g.lower().split())
+            
+            print("g.lower()", g.lower())
             #print("split_tails", split_tails)
+            #print("g.lower().split", g.lower().split())
 
-            b = sentence_bleu(sentence_tails, 
-                              g.lower(), 
-                              weights=(0.5, 0.5))
-            #print("b1:",b)
+            #b = sacrebleu.sentence_bleu(sentence_tails, 
+            #                  [g.lower()])
+            #print("b1:",b.score)
 
             b = sentence_bleu(split_tails, 
                               g.lower().split(), 
                               weights=(0.5, 0.5))
-            #print("b2:",b)
+            print("b2:",b)
             
             topk_bleu_score.append((l, b))
             if g in sentence_tails:
+                print("Exact match between", g, " and ", sentence_tails)
                 topk_exact_match.append((l, 1))
                 if g != "none":
                     topk_exact_match_not_none.append((l, 1))
@@ -100,7 +119,6 @@ def topk_eval(model_name, data, data_type, k):
     print(scores)
     return scores
 
-
 def eval(data_file, data_type, model_name):
 
     data = read_jsonl(data_file)
@@ -110,8 +128,7 @@ def eval(data_file, data_type, model_name):
 def toRow(name, results, columns):
     return [name] + [format(float(results[c]), '#.3f') for c in columns]
 
-# +
-expts = [['/home/pouramini/atomic_models/mygpt/pred_generations.jsonl',
+expts = [['/home/ahmad/comet-atomic-2020-t5-colab/pred_generations.jsonl',
            'MYGPT', 4]]
 
 add_column = True
@@ -127,17 +144,54 @@ for (f, m, t) in expts:
     rows.append(s_row)
 
 print(tabulate(rows, headers='firstrow', tablefmt='latex', floatfmt='#.3f'))
+
 # +
 import sacrebleu
-sys = ["This is cat."] 
-refs = [["This is a cat."], 
-        ["This is a bad cat."]] 
+sys = ["This is a cat bad koon"] 
+refs = [["This is a cat int"], 
+        ["This is a bad cat bad"]] 
 
-bleu = sacrebleu.corpus_bleu(sys, refs)
+refs_split = [r[0].split() for r in refs]
+sys_split = [r.split() for r in sys][0]
+
+print(refs_split)
+print(sys_split)
+bleu = sacrebleu.sentence_bleu(sys[0],[r[0] for r in refs])
 print("bleu", bleu.score)
 print("bleu", round(bleu.score,2))
 
-# -
+bleu = sentence_bleu(refs_split, sys_split)
+print("bleu", bleu)
+print("bleu", round(bleu,2))
 
+hypothesis1 = ['It', 'is', 'a', 'guide', 'to', 'action', 'which',
+               'ensures', 'that', 'the', 'military', 'always',
+               'obeys', 'the', 'commands', 'of', 'the', 'party']
+
+hypothesis2 = ['It', 'is', 'to', 'insure', 'the', 'troops',
+               'forever', 'hearing', 'the', 'activity', 'guidebook',
+               'that', 'party', 'direct']
+
+reference1 = ['It', 'is', 'a', 'guide', 'to', 'action', 'that',
+              'ensures', 'that', 'the', 'military', 'will', 'forever',
+              'heed', 'Party', 'commands']
+
+reference2 = ['It', 'is', 'the', 'guiding', 'principle', 'which',
+              'guarantees', 'the', 'military', 'forces', 'always',
+              'being', 'under', 'the', 'command', 'of', 'the',
+               'Party']
+
+reference3 = ['It', 'is', 'the', 'practical', 'guide', 'for', 'the',
+              'army', 'always', 'to', 'heed', 'the', 'directions',
+              'of', 'the', 'party']
+
+b = sentence_bleu([['This', 'is', 'a', 'cat'], ['This', 'is', 'a', 'bad', 'cat']]
+, ['This', 'is', 'a', 'cat', 'bad']) # doctest: +ELLIPSIS
+
+print("bleu score:", round(b,2))
+# -
+sentence_tails = ['to go home', "to go out"]
+g = "to go home" 
+g in sentence_tails
 
 
