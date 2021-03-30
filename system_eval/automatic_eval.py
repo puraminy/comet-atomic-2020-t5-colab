@@ -58,19 +58,19 @@ def topk_eval(model_name, data, data_type, k):
         #print("Head:", head)
         new_tails = []
         for t in tails:
-            end_index = t.index("[EOS]")
+            end_index = t.index("[EOS]") if "[EOS]" in t else len(t)
             t = t[:end_index]
             new_tails.append(t)
         tails = new_tails
 
         sentence_tails = [t.lower().strip() for t in tails]
-        print("sentence_tails:", sentence_tails)
+        #print("sentence_tails:", sentence_tails)
         split_tails = [t.lower().split() for t in tails]
 
         for (j, g) in enumerate(gens[:k]):
             #print("g:",g)
-            start_index = g.index("[GEN]")
-            end_index = g.index("[EOS]")
+            start_index = g.index("[GEN]") if "[GEN]" in g else 0
+            end_index = g.index("[EOS]") if "[EOS]" in g else 0
             if start_index > 0 and end_index > 0:
                 g = g[start_index+5:end_index].strip()
             elif end_index > 0:
@@ -80,7 +80,7 @@ def topk_eval(model_name, data, data_type, k):
             topk_gts[key] = sentence_tails
             topk_res[key] = [g.lower()]
             
-            print("g.lower()", g.lower())
+            #print("g.lower()", g.lower())
             #print("split_tails", split_tails)
             #print("g.lower().split", g.lower().split())
 
@@ -91,7 +91,7 @@ def topk_eval(model_name, data, data_type, k):
             b = sentence_bleu(split_tails, 
                               g.lower().split(), 
                               weights=(0.5, 0.5))
-            print("b2:",b)
+            #print("b2:",b)
             
             topk_bleu_score.append((l, b))
             if g in sentence_tails:
@@ -109,7 +109,7 @@ def topk_eval(model_name, data, data_type, k):
                 topk_is_head.append((l, 0))
 
     print("---------------TOP K={}---------------".format(k))
-    print(np.mean(get2(topk_exact_match)))
+    print("Exact Match:", np.mean(get2(topk_exact_match)))
     print(np.mean(get2(topk_exact_match_not_none)))
     print(np.mean(get2(topk_bleu_score)))
     QGEval = QGEvalCap(model_name, topk_gts, topk_res)
@@ -120,21 +120,54 @@ def topk_eval(model_name, data, data_type, k):
     return scores
 
 def eval(data_file, data_type, model_name):
+    if type(data_file) is str:
+        data = read_jsonl(data_file)
+        print(data[:4])
+        return topk_eval(model_name, data, data_type, k=1)
+    else:
+        src = data_file["source"]
+        target = data_file["target"]
+        gens = data_file["gens"]
+        with open(src, "r") as f:
+            src_lines = f.readlines()
+        with open(target, "r") as f:
+            target_lines = f.readlines()
+        with open(gens, "r") as f:
+            gens_lines = f.readlines()
+        print("src", len(src_lines), " t:", len(target_lines), "gen:", len(target_lines))
+        
+        data = []
+        for s,t,g in zip(src_lines, target_lines, gens_lines):
+            d = {}
+            d["source"] = s
+            d["target"] = t
+            d["generations"] = [g]
+            data.append(d)
+        print(data[:4])
+        print("len of data:", len(data))
+        #return ""
+        return topk_eval(model_name, data, data_type, k=1)
 
-    data = read_jsonl(data_file)
-
-    return topk_eval(model_name, data, data_type, k=1)
+            
+            
 
 def toRow(name, results, columns):
     return [name] + [format(float(results[c]), '#.3f') for c in columns]
 
 expts = [['/home/ahmad/comet-atomic-2020-t5-colab/pred_generations.jsonl',
-           'MYGPT', 4]]
+           'MYGPT', 4]
+        ]
+expts = [
+         [{"source":"../test.source","target":"../test.target","gens":"../test_generations.txt"}, 
+          "BART", 4]        
+        ]
 
 add_column = True
-print(expts)
+
 for (f, m, t) in expts:
     print(f)
+    print(m)
+    print(t)
     s = eval(f, data_type=t, model_name=m)
     columns = list(s.keys())
     s_row = toRow(m, s, columns)
@@ -151,6 +184,8 @@ sys = ["This is a cat bad koon"]
 refs = [["This is a cat int"], 
         ["This is a bad cat bad"]] 
 
+type(sys) == list
+# +
 refs_split = [r[0].split() for r in refs]
 sys_split = [r.split() for r in sys][0]
 
