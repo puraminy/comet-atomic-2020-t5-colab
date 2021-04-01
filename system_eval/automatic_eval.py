@@ -1,6 +1,6 @@
 # +
 import sys
-sys.path.append("/home/ahmad/comet-atomic-2020/")
+sys.path.append("/home/pouramini/comet-atomic-2020-t5-colab/")
 
 import argparse
 import numpy as np
@@ -95,7 +95,7 @@ def topk_eval(model_name, data, data_type, k):
             
             topk_bleu_score.append((l, b))
             if g in sentence_tails:
-                print("Exact match between", g, " and ", sentence_tails)
+                #print("Exact match between", g, " and ", sentence_tails)
                 topk_exact_match.append((l, 1))
                 if g != "none":
                     topk_exact_match_not_none.append((l, 1))
@@ -110,20 +110,23 @@ def topk_eval(model_name, data, data_type, k):
 
     print("---------------TOP K={}---------------".format(k))
     print("Exact Match:", np.mean(get2(topk_exact_match)))
-    print(np.mean(get2(topk_exact_match_not_none)))
-    print(np.mean(get2(topk_bleu_score)))
-    QGEval = QGEvalCap(model_name, topk_gts, topk_res)
+    print("Exact Match Not None", np.mean(get2(topk_exact_match_not_none)))
+    print("Mean sent BLEU score", np.mean(get2(topk_bleu_score)))
+    QGEval = QGEvalCap(model_name, topk_gts, topk_res, calc_bert_score=False)
     scores,_ = QGEval.evaluate()
     scores["Exact_match"] = np.mean(get2(topk_exact_match))
+    scores["Data rows"] = len(data)
+    scores["Records"] = len(topk_gts)
+    scores["TopK"] = k
     #scores["TailIsHead"] = np.mean(get2(topk_is_head))
     print(scores)
     return scores
 
-def eval(data_file, data_type, model_name):
+def eval(data_file, data_type, model_name, topk=1):
     if type(data_file) is str:
         data = read_jsonl(data_file)
-        print(data[:4])
-        return topk_eval(model_name, data, data_type, k=1)
+        print("Len data:", len(data))
+        return topk_eval(model_name, data, data_type, k=topk)
     else:
         src = data_file["source"]
         target = data_file["target"]
@@ -137,96 +140,33 @@ def eval(data_file, data_type, model_name):
         print("src", len(src_lines), " t:", len(target_lines), "gen:", len(target_lines))
         
         data = []
+        old_s, old_t, old_g = "","",""
+        dups = 0
+        new_gens = 0
         for s,t,g in zip(src_lines, target_lines, gens_lines):
-            d = {}
-            d["source"] = s
-            d["target"] = t
-            d["generations"] = [g]
-            data.append(d)
-        print(data[:4])
+            if s != old_s:
+                d = {}
+                d["source"] = s
+                d["target"] = t
+                d["generations"] = [g]
+                data.append(d)
+            elif g != old_g:
+                d["generations"].append(g)
+                #print("new gen for ", d)
+                new_gens += 1
+            else:
+                #print("duplicate ", s) 
+                dups += 1
+            old_s, old_t, old_g = s, t, g
+        print("New gens:", new_gens, " duplicates: ", dups)
+
         print("len of data:", len(data))
         #return ""
-        return topk_eval(model_name, data, data_type, k=1)
+        return topk_eval(model_name, data, data_type, k=topk)
 
             
             
 
 def toRow(name, results, columns):
     return [name] + [format(float(results[c]), '#.3f') for c in columns]
-
-expts = [['/home/ahmad/comet-atomic-2020-t5-colab/pred_generations.jsonl',
-           'MYGPT', 4]
-        ]
-expts = [
-         [{"source":"../test.source","target":"../test.target","gens":"../test_generations.txt"}, 
-          "BART", 4]        
-        ]
-
-add_column = True
-
-for (f, m, t) in expts:
-    print(f)
-    print(m)
-    print(t)
-    s = eval(f, data_type=t, model_name=m)
-    columns = list(s.keys())
-    s_row = toRow(m, s, columns)
-    if add_column:
-        rows = [[""] + columns]
-        add_column = False
-    rows.append(s_row)
-
-print(tabulate(rows, headers='firstrow', tablefmt='latex', floatfmt='#.3f'))
-
-# +
-import sacrebleu
-sys = ["This is a cat bad koon"] 
-refs = [["This is a cat int"], 
-        ["This is a bad cat bad"]] 
-
-type(sys) == list
-# +
-refs_split = [r[0].split() for r in refs]
-sys_split = [r.split() for r in sys][0]
-
-print(refs_split)
-print(sys_split)
-bleu = sacrebleu.sentence_bleu(sys[0],[r[0] for r in refs])
-print("bleu", bleu.score)
-print("bleu", round(bleu.score,2))
-
-bleu = sentence_bleu(refs_split, sys_split)
-print("bleu", bleu)
-print("bleu", round(bleu,2))
-
-hypothesis1 = ['It', 'is', 'a', 'guide', 'to', 'action', 'which',
-               'ensures', 'that', 'the', 'military', 'always',
-               'obeys', 'the', 'commands', 'of', 'the', 'party']
-
-hypothesis2 = ['It', 'is', 'to', 'insure', 'the', 'troops',
-               'forever', 'hearing', 'the', 'activity', 'guidebook',
-               'that', 'party', 'direct']
-
-reference1 = ['It', 'is', 'a', 'guide', 'to', 'action', 'that',
-              'ensures', 'that', 'the', 'military', 'will', 'forever',
-              'heed', 'Party', 'commands']
-
-reference2 = ['It', 'is', 'the', 'guiding', 'principle', 'which',
-              'guarantees', 'the', 'military', 'forces', 'always',
-              'being', 'under', 'the', 'command', 'of', 'the',
-               'Party']
-
-reference3 = ['It', 'is', 'the', 'practical', 'guide', 'for', 'the',
-              'army', 'always', 'to', 'heed', 'the', 'directions',
-              'of', 'the', 'party']
-
-b = sentence_bleu([['This', 'is', 'a', 'cat'], ['This', 'is', 'a', 'bad', 'cat']]
-, ['This', 'is', 'a', 'cat', 'bad']) # doctest: +ELLIPSIS
-
-print("bleu score:", round(b,2))
-# -
-sentence_tails = ['to go home', "to go out"]
-g = "to go home" 
-g in sentence_tails
-
 
